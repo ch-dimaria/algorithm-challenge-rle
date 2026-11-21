@@ -1,0 +1,24 @@
+name: Verifica Java RLE
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scarica il repository
+        uses: actions/checkout@v4
+      - name: Configura Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Compila
+        run: |
+          mkdir -p out
+          javac -encoding UTF-8 -d out src/*.java
+      - name: Esegui i 18 test
+        run: java -cp out TestRLE
