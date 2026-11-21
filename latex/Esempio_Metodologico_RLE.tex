@@ -1,0 +1,112 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[italian]{babel}
+\usepackage{lmodern,geometry,booktabs,tabularx,enumitem,xcolor,hyperref,listings}
+\geometry{margin=23mm}
+\definecolor{blu}{HTML}{153B62}
+\hypersetup{colorlinks=true,linkcolor=blu,urlcolor=blu}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\title{\textbf{Algorithm Challenge --- Esempio metodologico}\\Compressione Run-Length Encoding (RLE)}
+\author{IIS Europa Unita --- 4C INFO\\Prof. Christian Di Maria}
+\date{}
+\begin{document}
+\maketitle
+\noindent\textbf{Scopo:} mostrare come analizzare, progettare, implementare, collaudare e discutere un algoritmo in Java. RLE \emph{non} è tra i dodici algoritmi assegnati ai sei gruppi. Non va consegnato come terzo algoritmo.
+
+\section{Il problema}
+RLE sostituisce ogni sequenza consecutiva di caratteri uguali con una coppia \texttt{conteggio + lettera}. Il programma accetta stringhe da 0 a 100\,000 caratteri, soltanto lettere maiuscole \texttt{A--Z}. La restrizione evita ambiguità nella decodifica.
+
+\begin{center}
+\large\texttt{AAAABBBCCDAA} $\longrightarrow$ \texttt{4A3B2C1D2A}
+\end{center}
+
+\section{Esecuzione manuale}
+Scorriamo la stringa da sinistra verso destra. Finché il carattere è uguale al precedente incrementiamo il conteggio; a ogni cambio emettiamo il gruppo appena terminato. L'ultimo gruppo va emesso dopo il ciclo.
+
+\begin{tabularx}{\linewidth}{@{}lXl@{}}
+\toprule
+Gruppo & Decisione & Output progressivo\\
+\midrule
+\texttt{AAAA} & Cambio A/B: emetti 4A & \texttt{4A}\\
+\texttt{BBB} & Cambio B/C: emetti 3B & \texttt{4A3B}\\
+\texttt{CC} & Cambio C/D: emetti 2C & \texttt{4A3B2C}\\
+\texttt{D} & Cambio D/A: emetti 1D & \texttt{4A3B2C1D}\\
+\texttt{AA} & Fine stringa: emetti 2A & \texttt{4A3B2C1D2A}\\
+\bottomrule
+\end{tabularx}
+
+\section{Perché la decodifica è corretta?}
+Per ogni gruppo consecutivo, la compressione memorizza esattamente la quantità e il carattere. La decompressione ricrea le lettere nell'ordine. Verifichiamo la proprietà \texttt{decomprimi(comprimi(testo)).equals(testo)} sugli input ammessi. Non basta confrontare soltanto le lunghezze.
+
+\section{Progettazione a oggetti}
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+Classe & Responsabilità\\
+\midrule
+\texttt{CompressioneRLE} & Convalida, compressione e decompressione.\\
+\texttt{RisultatoCompressione} & Dati della prova, statistiche e \texttt{toString()}.\\
+\texttt{Main} & Input tramite \texttt{Scanner} e visualizzazione.\\
+\texttt{TestRLE} & 18 verifiche automatiche indipendenti.\\
+\bottomrule
+\end{tabularx}
+
+L'esempio non forza un'ereditarietà artificiale: presenta una sola strategia. Nei progetti di gruppo si dovranno progettare due strategie e considerare un'eventuale generalizzazione significativa.
+
+\newpage
+\section{Testing}
+Ogni risultato atteso deve poter essere ricostruito senza fidarsi del programma che si sta testando.
+
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+Input & Output atteso & Obiettivo\\
+\midrule
+\texttt{AAAABBBCCDAA} & \texttt{4A3B2C1D2A} & Sequenze multiple\\
+\texttt{AAAAAAAAAAAA} & \texttt{12A} & Conteggio a più cifre\\
+\texttt{ABC} & \texttt{1A1B1C} & Espansione sfavorevole\\
+\texttt{AABBAA} & \texttt{2A2B2A} & Gruppi separati\\
+Stringa vuota & Stringa vuota & Caso limite\\
+\texttt{A1} & Errore & Input non ammesso\\
+\bottomrule
+\end{tabularx}
+
+Il programma contiene 18 test automatici che controllano output atteso e, per i casi validi, ricostruzione esatta. Consultare \texttt{tests/casi-di-test.md}.
+
+\section{Confronto sperimentale}
+\begin{tabularx}{\linewidth}{@{}X r r r@{}}
+\toprule
+Input & Prima & Dopo & Risparmio\\
+\midrule
+\texttt{AAAAAAAAAAAA} & 12 & 3 & 75,00\%\\
+\texttt{AAAABBBCCDAA} & 12 & 10 & 16,67\%\\
+\texttt{ABC} & 3 & 6 & -100,00\%\\
+\bottomrule
+\end{tabularx}
+
+La misura riguarda i \emph{caratteri della rappresentazione}, non i byte occupati su disco. Un valore negativo indica che RLE ha prodotto una stringa più lunga. Spiegare il contesto della misura è parte del lavoro algoritmico.
+
+\section{Esecuzione}
+Dalla radice del repository con un JDK installato:
+\begin{lstlisting}
+javac -encoding UTF-8 -d out src/*.java
+java -cp out Main
+java -cp out TestRLE
+\end{lstlisting}
+Il test runner deve mostrare \texttt{Test superati: 18/18}. In IntelliJ IDEA aprire la cartella come progetto e configurare il JDK.
+
+\section{Domande per riflettere}
+\begin{enumerate}[leftmargin=*]
+\item Perché bisogna emettere l'ultimo gruppo dopo il ciclo?
+\item Che cosa cambierebbe se il testo potesse contenere cifre?
+\item In quali casi RLE comprime e in quali espande?
+\item Perché verificare la decodifica invece della sola lunghezza?
+\item Come progetteresti nuovi test senza modificare l'algoritmo?
+\end{enumerate}
+
+\section{Indicazioni per i gruppi}
+Ogni gruppo deve sviluppare i \textbf{due algoritmi assegnati} in un unico repository e consegnare su Moodle il link GitHub. Ciascuno dei tre studenti deve conoscere l'intero progetto, i test, le classi e le conclusioni. La valutazione prevede \textbf{40\% progetto comune e 60\% interrogazione individuale}.
+
+\bigskip
+\begin{center}\color{blu}\textbf{Conoscere un algoritmo significa saperlo spiegare, verificare e discutere.}\end{center}
+\end{document}
